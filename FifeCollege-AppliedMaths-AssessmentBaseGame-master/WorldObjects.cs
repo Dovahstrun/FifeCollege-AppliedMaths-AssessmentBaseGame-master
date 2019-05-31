@@ -61,6 +61,21 @@ namespace Assessment
                 // CODE FOR TASK 3 SHOULD BE ENTERED HERE
                 //
                 ///////////////////////////////////////////////////////////////////
+                //Find the centre  first, by starting at the model's world posiiton then adding an offset if the model's centre also happens to be offset - scaled by the model's scale
+                b.Min = position + mesh.Meshes[0].BoundingSphere.Center;
+
+                //Then move the centre to the top left corner by subtracting half of the size of the mesh calculated by its radius and scaled by visual and collision scales
+                b.Min.X -= (mesh.Meshes[0].BoundingSphere.Radius) * collisionScale.X * scale;
+                b.Min.Y -= (mesh.Meshes[0].BoundingSphere.Radius) * collisionScale.Y * scale;
+                b.Min.Z -= (mesh.Meshes[0].BoundingSphere.Radius) * collisionScale.Z * scale;
+
+                //Find the max (the opposite corner) by adding on the mesh sixze, scaled
+                b.Max.X = b.Min.X + mesh.Meshes[0].BoundingSphere.Radius * 2 * collisionScale.X * scale;
+                b.Max.Y = b.Min.Y + mesh.Meshes[0].BoundingSphere.Radius * 2 * collisionScale.Y * scale;
+                b.Max.Z = b.Min.Z + mesh.Meshes[0].BoundingSphere.Radius * 2 * collisionScale.Z * scale;
+
+
+
                 return b;
             }
         }
@@ -83,8 +98,10 @@ namespace Assessment
                     // The following effects allow the object to be drawn in the correct place, with the correct rotation and scale.
                     ///////////////////////////////////////////////////////////////////
                     //
-                    // CODE FOR TASK 1 SHOULD BE ENTERED HERE
-
+                    // CODE FOR TASK 1 HAS BEEN ENTERED HERE
+                    //
+                    ///////////////////////////////////////////////////////////////////
+                    
                     /// -----------------------------------------
                     /// WORLD MATRIX
                     /// -----------------------------------------
@@ -121,8 +138,7 @@ namespace Assessment
                     //Orthographic
                     //effect.Projection = Matrix.CreateOrthographic(1600, 900, 1f, 10000f);
 
-                    //
-                    ///////////////////////////////////////////////////////////////////
+                    
                     // the following effects are related to lighting and texture  settings, feel free to tweak them to see what happens.
                     effect.LightingEnabled = true;
                     effect.Alpha = Alpha; //  amount of transparency
