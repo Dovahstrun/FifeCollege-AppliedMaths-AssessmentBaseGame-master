@@ -37,6 +37,12 @@ namespace Assessment
         public Vector3 velocity_old = Vector3.Zero;
         public Vector3 acceleration_old = Vector3.Zero;
 
+        //Add a variable to keep track of when rock started falling
+        float rockFallStartTime = 0f;
+        float rockStartHeight;
+        
+
+
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -75,7 +81,7 @@ namespace Assessment
             BoundingRenderer.InitializeGraphics(graphics.GraphicsDevice);
             spriteBatch = new SpriteBatch(GraphicsDevice);
             player.LoadModel(Content, "Ship");
-            player.rotation = new Vector3(1.5f, 0f, 0f);
+            player.rotation = new Vector3(0f, 0f, 0f);
             player.position.X = 0;
             player.position.Y = 0;
             player.position.Z = 0;
@@ -83,6 +89,7 @@ namespace Assessment
             rock.LoadModel(Content, "Meteor");
             rock.scale = 0.1f;
             rock.position = new Vector3(25, 60, -50);
+            rockStartHeight = rock.position.Y;
             for (int c = 0; c < walls.Length; c++)
             {
                 walls[c] = new basicCuboid(GraphicsDevice);
@@ -113,7 +120,7 @@ namespace Assessment
         }
 
         public enum IntegrationMethod { ForwardEuler, LeapFrog, Verlet };
-        IntegrationMethod currentIntegrationMethod = IntegrationMethod.Verlet;
+        IntegrationMethod currentIntegrationMethod = IntegrationMethod.ForwardEuler;
 
         private void MovePlayer(int dt)
         {
@@ -121,8 +128,8 @@ namespace Assessment
             {
                 case IntegrationMethod.ForwardEuler:
                     //// This method is deprecated due to stability issues.
-                    //player.position += player.velocity * dt;
-                    //player.velocity += acceleration * dt;
+                    player.position -= player.velocity * dt;
+                    player.velocity += acceleration * dt;
 
                     break;
 
@@ -146,6 +153,15 @@ namespace Assessment
                     player.velocity *= 0.99f;
                     break;
                 case IntegrationMethod.Verlet:
+                    //Update acceleration(new drag)
+                    if (position_older != position_old)
+                    {
+                        Vector3 drag = position_older - position_old;
+                        drag.Normalize();
+                        drag *= 0.0001f;
+                        acceleration += drag;
+                    }
+
                     player.position = 2 * position_old - position_older + acceleration * dt * dt;
                     break;
             }
@@ -207,16 +223,32 @@ namespace Assessment
             if (player.hitBox.Intersects(TriggerBoxRockFall) && !rockFalling)
             {
                 rockFalling = true;
-                rock.velocity = new Vector3(0, 0.2f, 0);
+                //Assign rockfall start time
+                rockFallStartTime = (float)gameTime.TotalGameTime.TotalSeconds;
+
             }
             if (rockFalling)
             {
-                Vector3 gravity = new Vector3(0, -0.01f, 0);
+                Vector3 gravity = new Vector3(0, -100f, 0);
                 ///////////////////////////////////////////////////////////////////
                 //
                 // CODE FOR TASK 4 SHOULD BE ENTERED HERE
                 //
                 ///////////////////////////////////////////////////////////////////
+                
+                //Calculate time since rocks started falling
+                float rockTimeSinceFall = (float)gameTime.TotalGameTime.TotalSeconds - rockFallStartTime;
+                //Calculate rocks new y position using the derived equation
+                rock.position.Y = (gravity.Y * rockTimeSinceFall * rockTimeSinceFall) / 2 + rockStartHeight;
+                
+                //Stop when you reach the ground (0)
+                if (rock.position.Y < 0f)
+                {
+                    rock.position.Y = 0f;
+                    rockFallStartTime = 0f;
+                }
+
+
             }
             if (player.hitBox.Intersects(TriggerBoxDoorOpen))
             {
@@ -232,6 +264,19 @@ namespace Assessment
                 // CODE FOR TASK 5 SHOULD BE ENTERED HERE
                 //
                 ///////////////////////////////////////////////////////////////////
+                
+                doorSequenceTimer += gameTime.ElapsedGameTime.Milliseconds;
+                if (doorSequenceTimer >= doorSequenceFinalTime)
+                {
+
+                    //reset the timer
+                    doorSequenceTimer = doorSequenceFinalTime;
+
+                }
+
+                newPos = CubicInterpolation(doorStartPoint, doorEndPoint, (float)doorSequenceTimer, (float)doorSequenceFinalTime);
+                door.SetUpVertices(newPos);
+
             }
 
 
@@ -299,9 +344,29 @@ namespace Assessment
         //
         ///////////////////////////////////////////////////////////////////
         public Vector3 CubicInterpolation(Vector3 initialPos, Vector3 endPos, float
-        time)
+        time, float duration)
         {
-            return new Vector3(0, 0, 0);
+            ///  // Calculate the time variable as a ratio of time passed to the total duration
+            // (between 0 and 1)
+
+            float t = time / duration;
+
+            // Calculate p (position aka distance traveled from start)
+            // Using our derived cubic equation
+            // Produces a fraction of the complete distance (between 0 and 1)
+            // This is our scaling factor
+            float p = -2f * (t * t * t) + 3f * (t * t);
+
+            Vector3 totalDistance = endPos - initialPos;
+
+            // Determine the distance traveled (how far we have actually gone so far)
+            // By scaling the total distance by our generated scaling factor (p)
+            Vector3 distanceTraveled = totalDistance * p;
+
+            // Determine the new position by adding the distance traveled to the start point
+            Vector3 newPosition = initialPos + distanceTraveled;
+
+            return newPosition;
         }
 
         /// <summary>

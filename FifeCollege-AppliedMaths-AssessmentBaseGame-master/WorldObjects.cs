@@ -62,7 +62,7 @@ namespace Assessment
                 //
                 ///////////////////////////////////////////////////////////////////
                 //Find the centre  first, by starting at the model's world posiiton then adding an offset if the model's centre also happens to be offset - scaled by the model's scale
-                b.Min = position + mesh.Meshes[0].BoundingSphere.Center;
+                b.Min = position + mesh.Meshes[0].BoundingSphere.Center + new Vector3(0, 0, 10);
 
                 //Then move the centre to the top left corner by subtracting half of the size of the mesh calculated by its radius and scaled by visual and collision scales
                 b.Min.X -= (mesh.Meshes[0].BoundingSphere.Radius) * collisionScale.X * scale;
@@ -70,9 +70,9 @@ namespace Assessment
                 b.Min.Z -= (mesh.Meshes[0].BoundingSphere.Radius) * collisionScale.Z * scale;
 
                 //Find the max (the opposite corner) by adding on the mesh sixze, scaled
-                b.Max.X = b.Min.X + mesh.Meshes[0].BoundingSphere.Radius * 2 * collisionScale.X * scale;
+                b.Max.X = b.Min.X + mesh.Meshes[0].BoundingSphere.Radius * 3 * collisionScale.X * scale;
                 b.Max.Y = b.Min.Y + mesh.Meshes[0].BoundingSphere.Radius * 2 * collisionScale.Y * scale;
-                b.Max.Z = b.Min.Z + mesh.Meshes[0].BoundingSphere.Radius * 2 * collisionScale.Z * scale;
+                b.Max.Z = b.Min.Z + mesh.Meshes[0].BoundingSphere.Radius * 3 * collisionScale.Z * scale;
 
 
 
